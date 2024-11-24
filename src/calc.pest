@@ -1,0 +1,74 @@
+// No whitespace allowed between digits
+WHITESPACE = _{ " "}
+
+// 字面量
+integer = @{ ASCII_DIGIT+ }
+string = @{ ASCII_ALPHANUMERIC* }
+string_l = _{ "\"" ~ string ~ "\"" }
+
+
+// 标识符
+ident = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+
+// 关键字
+if = {"if"}
+else = {"else"}
+function = {"fn"}
+void = {"void"}
+return = {"return"}
+str = {"string"}
+bool = {"bool"}
+
+// 类型
+int = {"int"}
+fn_type = {function ~ type_or_void ~ type_list}
+type_list = {"(" ~ (typed~(","~typed)*)* ~ ")"}
+type_or_void = { typed | void}
+typed = {int | fn_type | str | bool}
+
+
+// 操作符
+add = { "+" }
+subtract = { "-" }
+multiply = { "*" }
+divide = { "/" }
+assign = { "=" }
+
+eq = { "==" }
+large = { ">" }
+less = { "<" }
+
+atom = _{  fn_call | integer | ident }
+add_op = _{ add | subtract }
+multi_op = _{ multiply | divide }
+judge_op = _{eq | large | less}
+
+
+// 表达式
+multi = { atom ~ (multi_op ~ atom)* }
+additive = { multi ~ (add_op ~ multi)*}
+declare_stat = { typed ~ ident ~ (assign ~ additive)? }
+assi_stat = { ident ~ assign ~ additive }
+judge_stat = {additive ~ judge_op ~ additive}
+fn_call = { ident ~ call_args}
+fn_declare = { type_or_void ~ ident ~ argu_list ~ block }
+argu_list = {"(" ~ (declare_stat~(","~declare_stat)*)* ~ ")"}
+return_stat = {return ~ additive | judge_stat | fn_declare }
+
+call_args = _{ "(" ~  (additive ~ (","~ additive)*)* ~ ")"  }
+bool_expr = _{ "(" ~ judge_stat ~ ")" }
+
+block = {"{" ~ ("\n")* ~ block_stats ~ ("\n")* ~ "}"}
+block_stat = _{statement ~ ("\n")*}
+block_stats = _{block_stat*}
+
+if_statement = {
+    if ~ bool_expr ~ block ~ else_block?
+}
+else_block = _{
+    else ~ block
+}
+
+statement = { (additive ~ ";") | (judge_stat ~ ";") | (assi_stat ~ ";") | (declare_stat ~ ";") | fn_declare | if_statement | block | (return_stat ~ ";")}
+
+equation = _{ SOI ~ (statement ~ ("\r\n" | "\n")*)* ~ EOI }
